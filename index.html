@@ -535,8 +535,12 @@ function submitToSheet() {
   const name      = document.getElementById('inp-name').value.trim();
   const email     = document.getElementById('inp-email').value.trim();
   const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-  const SCRIPT    = "https://script.google.com/macros/s/AKfycbw5ffQaOSK5RG3Tp2SXbCEm2RJGypOA2haVdSKt5mCHsT1cLIYg5iHPU_otSlUVV_a8WQ/exec";
-  fetch(`${SCRIPT}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&timestamp=${encodeURIComponent(timestamp)}`).catch(()=>{});
+  const SCRIPT    = "https://script.google.com/macros/s/AKfycbzeosiatpNEuAdQOy2y1P0kxmiqYxu9mo_90vQwoTBtKGQJsPQaTCqkF3JxtIWJsqVQCw/exec";
+  const cbName    = "gsCallback_" + Date.now();
+  window[cbName]  = function() { delete window[cbName]; document.body.removeChild(s); };
+  const s         = document.createElement("script");
+  s.src           = `${SCRIPT}?callback=${cbName}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&timestamp=${encodeURIComponent(timestamp)}`;
+  document.body.appendChild(s);
 }
 
 function spawnParticles() {
