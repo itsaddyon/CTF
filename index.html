@@ -535,7 +535,7 @@ function submitToSheet() {
   const name      = document.getElementById('inp-name').value.trim();
   const email     = document.getElementById('inp-email').value.trim();
   const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-  const SCRIPT    = "https://script.google.com/macros/s/AKfycbzHO8NIwsF0WEu-5jqAcsgUoTTZWtXZAYikjfrL67D4rxGHD7mrh_S6mSXT5oZ4hit_Dw/exec";
+  const SCRIPT    = "https://script.google.com/macros/s/AKfycbw5ffQaOSK5RG3Tp2SXbCEm2RJGypOA2haVdSKt5mCHsT1cLIYg5iHPU_otSlUVV_a8WQ/exec";
   fetch(`${SCRIPT}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&timestamp=${encodeURIComponent(timestamp)}`).catch(()=>{});
 }
 
