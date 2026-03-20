@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDGxRIT26 — The Last Job</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g:   #00ff88;
+  --dg:  #00cc66;
+  --ddg: #007740;
+  --bg:  #020b05;
+  --p:   #031409;
+  --b:   #0a3a1a;
+  --r:   #ff2244;
+  --y:   #ffd700;
+  --c:   #00ffff;
+  --dim: #0e2a18;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  background:var(--bg); color:var(--g);
+  font-family:'Share Tech Mono',monospace;
+  min-height:100vh; display:flex; flex-direction:column;
+  align-items:center; padding:0 20px 80px;
+  overflow-x:hidden; cursor:crosshair;
+}
+#matrix-canvas { position:fixed; top:0; left:0; width:100%; height:100%; opacity:.07; pointer-events:none; z-index:0; }
+.scanlines {
+  position:fixed; inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,136,.018) 3px,rgba(0,255,136,.018) 4px);
+  pointer-events:none; z-index:998;
+  animation:scanroll 10s linear infinite;
+}
+@keyframes scanroll { 0%{background-position:0 0} 100%{background-position:0 400px} }
+.vignette {
+  position:fixed; inset:0;
+  background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.85) 100%);
+  pointer-events:none; z-index:1;
+}
+.glitch-bar {
+  position:fixed; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--g),var(--c),var(--g),transparent);
+  animation:barslide 3s ease-in-out infinite; z-index:999;
+}
+@keyframes barslide { 0%,100%{opacity:.4;transform:scaleX(.3)} 50%{opacity:1;transform:scaleX(1)} }
+.container { position:relative; z-index:2; width:100%; max-width:700px; padding-top:60px; }
+
+.boot-screen {
+  text-align:center; margin-bottom:56px;
+  animation:fadein 1.2s ease forwards;
+}
+@keyframes fadein { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:none} }
+
+.sys-tag {
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:10px; letter-spacing:5px; color:var(--dg);
+  border:1px solid var(--b); padding:5px 18px;
+  margin-bottom:24px; text-transform:uppercase;
+  position:relative; overflow:hidden;
+}
+.sys-tag::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(0,255,136,.07),transparent);
+  animation:shimmer 2.5s infinite;
+}
+@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+.sys-dot { width:6px; height:6px; border-radius:50%; background:var(--g); animation:dot 1.4s ease-in-out infinite; }
+@keyframes dot { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,.6)} 50%{opacity:.5;box-shadow:0 0 0 5px rgba(0,255,136,0)} }
+
+.main-title {
+  font-family:'Orbitron',monospace;
+  font-size:clamp(30px,8vw,58px);
+  font-weight:900; letter-spacing:4px; line-height:1.1;
+  text-shadow:0 0 20px rgba(0,255,136,.6),0 0 60px rgba(0,255,136,.2);
+  animation:titleglitch 7s infinite;
+}
+@keyframes titleglitch {
+  0%,90%,100%{text-shadow:0 0 20px rgba(0,255,136,.6),0 0 60px rgba(0,255,136,.2);transform:none}
+  92%{transform:translate(-2px,0) skewX(-1deg);text-shadow:-3px 0 var(--c),3px 0 var(--r)}
+  94%{transform:translate(2px,0) skewX(1deg);text-shadow:3px 0 var(--r),-3px 0 var(--c)}
+  96%{transform:none}
+}
+.main-title .acc { color:var(--y); }
+.main-title .sub { color:var(--dg); font-size:.52em; display:block; letter-spacing:8px; margin-top:6px; }
+
+.subtitle {
+  font-family:'VT323',monospace;
+  font-size:clamp(18px,4vw,26px);
+  color:var(--dg); letter-spacing:3px; margin-top:14px;
+  overflow:hidden; white-space:nowrap;
+  animation:typein 2.5s steps(44,end) .8s both;
+}
+@keyframes typein { from{width:0} to{width:100%} }
+
+.hex-row { margin-top:14px; font-size:10px; color:var(--ddg); letter-spacing:3px; animation:flicker 5s ease infinite; }
+@keyframes flicker { 0%,95%,100%{opacity:.5} 97%{opacity:.08} }
+
+.panel {
+  background:var(--p); border:1px solid var(--b);
+  padding:32px; margin-bottom:20px;
+  position:relative; overflow:hidden;
+  animation:panelin .5s ease both;
+}
+.panel:nth-child(2){animation-delay:.1s}
+@keyframes panelin { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+.panel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg,var(--g),transparent 60%);
+}
+.panel::after {
+  content:''; position:absolute; top:0; left:0;
+  width:3px; height:100%;
+  background:linear-gradient(180deg,var(--g),transparent); opacity:.4;
+}
+.panel-corner { position:absolute; top:9px; right:13px; font-size:9px; letter-spacing:2px; color:var(--ddg); }
+.panel-title {
+  font-family:'Orbitron',monospace; font-size:11px; letter-spacing:4px;
+  color:var(--dg); text-transform:uppercase;
+  margin-bottom:28px; padding-bottom:14px; border-bottom:1px solid var(--dim);
+  display:flex; align-items:center; gap:10px;
+}
+.panel-title::before { content:'▶'; font-size:8px; color:var(--g); animation:blink 1.2s step-end infinite; }
+@keyframes blink { 50%{opacity:0} }
+
+.field { margin-bottom:22px; }
+.field label {
+  display:flex; align-items:center; gap:8px;
+  font-size:10px; letter-spacing:3px; color:var(--dg);
+  margin-bottom:9px; text-transform:uppercase;
+}
+.field label::before { content:'//'; color:var(--ddg); }
+.field input {
+  width:100%; background:rgba(0,255,136,.02);
+  border:1px solid var(--b); border-left:2px solid var(--ddg);
+  color:var(--g); font-family:'Share Tech Mono',monospace;
+  font-size:14px; padding:13px 16px; outline:none;
+  transition:all .25s;
+}
+.field input:focus {
+  border-color:var(--g); border-left-color:var(--g);
+  background:rgba(0,255,136,.04);
+  box-shadow:0 0 0 1px rgba(0,255,136,.1),inset 0 0 20px rgba(0,255,136,.03);
+}
+.field input::placeholder { color:var(--dim); }
+
+.btn {
+  width:100%; background:transparent; border:1px solid var(--g);
+  color:var(--g); font-family:'Orbitron',monospace; font-size:12px;
+  font-weight:700; letter-spacing:4px; padding:15px; cursor:pointer;
+  text-transform:uppercase; position:relative; overflow:hidden;
+  transition:color .3s; margin-top:10px;
+}
+.btn::before {
+  content:''; position:absolute; inset:0; background:var(--g);
+  transform:translateX(-101%); transition:transform .3s ease; z-index:-1;
+}
+.btn:hover { color:var(--bg); }
+.btn:hover::before { transform:translateX(0); }
+.btn:active { transform:scale(.99); }
+
+.msg {
+  font-size:12px; letter-spacing:1px; padding:11px 16px;
+  margin-top:16px; border-left:3px solid; display:none;
+}
+.msg::before { content:'> '; opacity:.5; }
+.msg.error  { color:var(--r); border-color:var(--r); background:rgba(255,34,68,.06); }
+.msg.success{ color:var(--g); border-color:var(--g); background:rgba(0,255,136,.06); }
+.msg.show   { display:block; animation:msgin .25s ease; }
+@keyframes msgin { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+
+#p2-wrap { display:none; }
+#p2-wrap.live { display:block; animation:panelin .6s ease; }
+
+.challenge-lede {
+  font-size:13px; line-height:2; color:#7fffc4;
+  margin-bottom:22px; border-left:2px solid var(--ddg); padding-left:16px;
+}
+.challenge-lede .hl { color:var(--y); font-weight:bold; }
+
+.tx-label {
+  font-size:10px; letter-spacing:3px; color:var(--ddg);
+  margin-bottom:8px; display:flex; align-items:center; gap:10px;
+}
+.tx-label::after { content:''; flex:1; height:1px; background:var(--dim); }
+
+.encoded-block {
+  background:#010805; border:1px solid var(--b);
+  border-left:3px solid var(--dg);
+  padding:20px; margin-bottom:6px;
+  font-size:14px; word-break:break-all;
+  color:var(--y); letter-spacing:1.5px; line-height:1.8;
+  position:relative; overflow:hidden; cursor:pointer;
+  transition:border-color .2s;
+}
+.encoded-block:hover { border-color:var(--g); }
+.encoded-block::before {
+  content:''; position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(0,255,136,.012) 3px,rgba(0,255,136,.012) 4px);
+  pointer-events:none;
+}
+
+.copy-hint { font-size:10px; letter-spacing:2px; color:var(--ddg); margin-bottom:20px; }
+
+.hint-card {
+  background:rgba(0,255,136,.02); border:1px dashed var(--ddg);
+  padding:16px 20px; margin-bottom:22px;
+  font-size:12px; line-height:1.9; color:var(--dg);
+}
+.hint-card .htitle {
+  font-family:'Orbitron',monospace; font-size:9px; letter-spacing:3px;
+  color:var(--ddg); margin-bottom:12px; text-transform:uppercase;
+}
+.hint-card .step { display:flex; gap:12px; margin-bottom:6px; align-items:flex-start; }
+.hint-card .snum {
+  background:var(--ddg); color:var(--bg);
+  font-size:10px; padding:1px 6px; min-width:22px;
+  text-align:center; flex-shrink:0; margin-top:2px;
+}
+.hint-card em { color:var(--c); font-style:normal; }
+
+.submit-row { display:flex; gap:10px; margin-top:4px; }
+.submit-row input {
+  flex:1; background:rgba(0,255,136,.02);
+  border:1px solid var(--b); border-left:2px solid var(--ddg);
+  color:var(--g); font-family:'Share Tech Mono',monospace;
+  font-size:13px; padding:13px 16px; outline:none; transition:all .25s;
+}
+.submit-row input:focus { border-color:var(--g); border-left-color:var(--g); box-shadow:0 0 0 1px rgba(0,255,136,.1); }
+.submit-row input::placeholder { color:var(--dim); }
+.submit-row button {
+  background:transparent; border:1px solid var(--dg); color:var(--dg);
+  font-family:'Orbitron',monospace; font-size:10px; letter-spacing:2px;
+  padding:13px 20px; cursor:pointer; text-transform:uppercase;
+  white-space:nowrap; position:relative; overflow:hidden; transition:color .3s;
+}
+.submit-row button::before {
+  content:''; position:absolute; inset:0; background:var(--dg);
+  transform:translateX(-101%); transition:transform .3s ease; z-index:-1;
+}
+.submit-row button:hover { color:var(--bg); }
+.submit-row button:hover::before { transform:translateX(0); }
+
+#win-screen { display:none; margin-top:20px; }
+#win-screen.show { display:block; animation:winreveal .8s ease; }
+@keyframes winreveal { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+
+.win-box {
+  background:linear-gradient(135deg,rgba(0,255,136,.04),rgba(0,255,255,.02));
+  border:1px solid var(--g); padding:44px 32px;
+  text-align:center; position:relative; overflow:hidden;
+}
+.win-box::before,.win-box::after {
+  content:''; position:absolute; left:0; right:0; height:1px;
+}
+.win-box::before { top:0; background:linear-gradient(90deg,transparent,var(--g),var(--c),var(--g),transparent); }
+.win-box::after  { bottom:0; background:linear-gradient(90deg,transparent,var(--g),var(--c),var(--g),transparent); }
+.win-corner { position:absolute; font-size:9px; letter-spacing:2px; color:var(--ddg); }
+.win-corner.tl{top:10px;left:14px} .win-corner.tr{top:10px;right:14px}
+.win-corner.bl{bottom:10px;left:14px} .win-corner.br{bottom:10px;right:14px}
+
+.win-icon { font-size:52px; margin-bottom:18px; display:block; animation:float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+.win-pre  { font-family:'VT323',monospace; font-size:clamp(18px,4vw,26px); color:var(--dg); letter-spacing:4px; margin-bottom:8px; }
+.win-name {
+  font-family:'Orbitron',monospace; font-size:clamp(24px,6vw,44px);
+  font-weight:900; color:var(--g); letter-spacing:3px; margin-bottom:22px;
+  animation:nameglow 2s ease-in-out infinite alternate;
+}
+@keyframes nameglow {
+  from{text-shadow:0 0 20px rgba(0,255,136,.5)}
+  to  {text-shadow:0 0 40px rgba(0,255,136,.9),0 0 100px rgba(0,255,136,.4)}
+}
+.win-message {
+  font-size:13px; color:#7fffc4; line-height:2.1;
+  margin-bottom:30px; max-width:480px; margin-left:auto; margin-right:auto;
+}
+.win-message strong { color:var(--g); }
+.win-flag-label { font-size:10px; letter-spacing:4px; color:var(--ddg); margin-bottom:10px; }
+.win-flag {
+  font-family:'Orbitron',monospace; font-size:clamp(11px,2.2vw,15px);
+  color:var(--y); background:rgba(255,215,0,.06);
+  border:1px solid rgba(255,215,0,.25); padding:14px 20px;
+  display:inline-block; letter-spacing:1px; word-break:break-all;
+  text-shadow:0 0 20px rgba(255,215,0,.5);
+  animation:flagpulse 2.5s ease-in-out infinite;
+}
+@keyframes flagpulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0)} 50%{box-shadow:0 0 20px 2px rgba(255,215,0,.15)} }
+.win-note { margin-top:18px; font-size:11px; letter-spacing:2px; color:var(--ddg); }
+.win-note span { color:var(--dg); }
+
+.particles { position:fixed; inset:0; pointer-events:none; z-index:3; display:none; }
+.particles.active { display:block; }
+.particle { position:absolute; width:3px; height:3px; border-radius:50%; animation:rise linear forwards; }
+@keyframes rise { from{transform:translateY(0) rotate(0deg);opacity:1} to{transform:translateY(-100vh) rotate(720deg);opacity:0} }
+
+.status-bar {
+  position:fixed; bottom:0; left:0; right:0;
+  padding:6px 20px; background:rgba(2,11,5,.92);
+  border-top:1px solid var(--dim);
+  display:flex; justify-content:space-between;
+  font-size:10px; letter-spacing:2px; color:var(--ddg); z-index:100;
+}
+.live { color:var(--g); animation:blink 2s step-end infinite; }
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+<div class="glitch-bar"></div>
+<div class="particles" id="particles"></div>
+
+<div class="container">
+
+  <div class="boot-screen">
+    <div class="sys-tag">
+      <div class="sys-dot"></div>
+      GDGxRIT26 SECURE TERMINAL
+      <div class="sys-dot"></div>
+    </div>
+    <div class="main-title">
+      THE LAST<br><span class="acc">JOB</span>
+      <span class="sub">ADVANCED LEVEL · FINAL STAGE</span>
+    </div>
+    <div class="subtitle">// One challenge. One flag. No second chances.</div>
+    <div class="hex-row">4744 4778 5249 5432 3626 2043 5446 2032 3032 36</div>
+  </div>
+
+  <div class="panel" id="login-panel">
+    <div class="panel-corner">SYS::AUTH</div>
+    <div class="panel-title">Identity Verification</div>
+
+    <div class="field">
+      <label>Operative Name</label>
+      <input type="text" id="inp-name" placeholder="Enter your name" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Contact Address</label>
+      <input type="email" id="inp-email" placeholder="Enter your email" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Problem 1 Clearance Flag</label>
+      <input type="text" id="inp-flag" placeholder="GDGxRIT26CTF@..." autocomplete="off">
+    </div>
+
+    <button class="btn" onclick="verify()">[ Initiate Clearance ]</button>
+    <div class="msg" id="login-msg"></div>
+  </div>
+
+  <div id="p2-wrap"></div>
+
+</div>
+
+<div class="status-bar">
+  <span>GDGxRIT26 · ADVANCED CTF · AUTHORIZED ACCESS ONLY</span>
+  <span class="live">● LIVE</span>
+</div>
+
+<script>
+const CORRECT_HASH = "f50a3145a7a7490a2b94190eaeb400476b28625bfd499701aee51015fc249eb0";
+const FLAG_HASH    = "3437f0162e28a283f1708e4cb9f560901f5e166f3df12552da2823c3972d6ca5";
+let   playerName   = "";
+
+(function() {
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, cols, drops;
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    cols  = Math.floor(W / 18);
+    drops = Array(cols).fill(1);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  const chars = '01アイウエオカキクケコGDGRIT2026CTFABCDEF0123456789';
+  function draw() {
+    ctx.fillStyle = 'rgba(2,11,5,0.05)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#00ff88';
+    ctx.font = '14px Share Tech Mono';
+    drops.forEach((y, i) => {
+      ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 18, y * 18);
+      if (y * 18 > H && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+  }
+  setInterval(draw, 50);
+})();
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function showMsg(el, type, text) {
+  el.className = `msg ${type} show`;
+  el.textContent = text;
+}
+
+async function verify() {
+  const name  = document.getElementById('inp-name').value.trim();
+  const email = document.getElementById('inp-email').value.trim();
+  const flag  = document.getElementById('inp-flag').value.trim();
+  const msg   = document.getElementById('login-msg');
+  msg.className = 'msg';
+
+  if (!name)                         { showMsg(msg,'error','ERROR: Operative name required.'); return; }
+  if (!email || !email.includes('@')) { showMsg(msg,'error','ERROR: Valid contact address required.'); return; }
+  if (!flag)                         { showMsg(msg,'error','ERROR: Clearance flag required.'); return; }
+
+  const hash = await sha256(flag);
+  if (hash !== CORRECT_HASH) {
+    showMsg(msg,'error','ACCESS DENIED — Invalid clearance flag. Complete Problem 1 first.');
+    const fi = document.getElementById('inp-flag');
+    fi.style.borderColor = 'var(--r)';
+    setTimeout(() => fi.style.borderColor = '', 1500);
+    return;
+  }
+
+  playerName = name;
+  showMsg(msg,'success',`CLEARANCE VERIFIED — Welcome, ${name}. Deploying final stage...`);
+
+  setTimeout(() => {
+    const panel = document.getElementById('login-panel');
+    panel.style.transition = 'opacity .5s, filter .5s';
+    panel.style.opacity    = '.3';
+    panel.style.filter     = 'grayscale(1)';
+    panel.style.pointerEvents = 'none';
+    injectProblem2();
+  }, 1100);
+}
+
+function injectProblem2() {
+  const parts   = ['U1lOVHtxM3AwcTNx','X3kxeDNfNF91NHB4','M2VfVFFUMjAyNn0='];
+  const encoded = parts.join('');
+  const wrap    = document.getElementById('p2-wrap');
+
+  wrap.innerHTML = `
+    <div class="panel">
+      <div class="panel-corner">MISSION::FINAL</div>
+      <div class="panel-title">Intercepted Transmission</div>
+      <div class="challenge-lede">
+        Our intelligence unit intercepted an encrypted payload from a compromised node.<br>
+        It has been <span class="hl">encoded in two layers</span> to hide its contents.<br>
+        Your mission: <span class="hl">strip both layers</span> and extract the hidden flag.<br><br>
+        This is <span class="hl">The Last Job</span>. Don't leave empty-handed.
+      </div>
+      <div class="tx-label">// INTERCEPTED PAYLOAD</div>
+      <div class="encoded-block" id="enc-block" onclick="copyEnc()">${encoded}</div>
+      <div class="copy-hint">↑ click to copy</div>
+      <div class="hint-card">
+        <div class="htitle">// Decryption Protocol</div>
+        <div class="step"><span class="snum">01</span><span>The payload is <em>Base64</em> encoded — characters are only A–Z, a–z, 0–9, +, /, =</span></div>
+        <div class="step"><span class="snum">02</span><span>After decoding, apply <em>ROT13</em> — each letter shifts 13 positions in the alphabet</span></div>
+        <div class="step"><span class="snum">03</span><span>The result is your flag. Submit it below.</span></div>
+        <div style="margin-top:12px;font-size:11px;color:var(--ddg)">Search online: <em style="color:var(--c)">"base64 decode"</em> &nbsp;→&nbsp; <em style="color:var(--c)">"rot13 decode"</em></div>
+      </div>
+      <div class="tx-label">// SUBMIT DECODED FLAG</div>
+      <div class="submit-row">
+        <input type="text" id="ans-input" placeholder="FLAG{...}" autocomplete="off"
+               onkeydown="if(event.key==='Enter') checkFlag()">
+        <button onclick="checkFlag()">[ Transmit ]</button>
+      </div>
+      <div class="msg" id="p2-msg"></div>
+      <div id="win-screen"></div>
+    </div>
+  `;
+
+  wrap.className = 'live';
+  setTimeout(() => wrap.scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function copyEnc() {
+  const b = document.getElementById('enc-block');
+  if (!b) return;
+  navigator.clipboard.writeText(b.textContent.trim()).catch(()=>{});
+  b.style.borderLeftColor = 'var(--g)';
+  b.style.color = 'var(--g)';
+  setTimeout(() => { b.style.borderLeftColor = ''; b.style.color = ''; }, 700);
+}
+
+async function checkFlag() {
+  const ans = document.getElementById('ans-input').value.trim();
+  const msg = document.getElementById('p2-msg');
+  msg.className = 'msg';
+  if (!ans) { showMsg(msg,'error','ERROR: Enter your decoded flag.'); return; }
+  const hash = await sha256(ans);
+  if (hash === FLAG_HASH) {
+    showMsg(msg,'success','CORRECT — Transmission fully decoded. Mission complete.');
+    document.getElementById('ans-input').disabled = true;
+    launchWin(ans);
+  } else {
+    showMsg(msg,'error','WRONG — Decode both layers carefully and try again.');
+    const ai = document.getElementById('ans-input');
+    ai.style.borderColor = 'var(--r)';
+    setTimeout(() => { msg.className = 'msg'; ai.style.borderColor = ''; }, 2000);
+  }
+}
+
+function launchWin(flag) {
+  spawnParticles();
+  const ws = document.getElementById('win-screen');
+  ws.innerHTML = `
+    <div class="win-box">
+      <div class="win-corner tl">GDG::RIT26</div>
+      <div class="win-corner tr">MISSION::COMPLETE</div>
+      <div class="win-corner bl">ADVANCED::LEVEL</div>
+      <div class="win-corner br">FLAG::CAPTURED</div>
+      <span class="win-icon">⚡</span>
+      <div class="win-pre">MISSION ACCOMPLISHED</div>
+      <div class="win-name">${playerName.toUpperCase()}</div>
+      <div class="win-message">
+        You didn't quit when it got hard.<br>
+        You decoded what others couldn't read.<br>
+        You made it to the end of The Last Job.<br>
+        <strong>That's what hackers are made of.</strong>
+      </div>
+      <div class="win-flag-label">// YOUR FLAG</div>
+      <div class="win-flag">${flag}</div>
+      <div class="win-note">Submit this on <span>CTF7</span> to claim your place on the leaderboard.</div>
+    </div>
+  `;
+  ws.className = 'show';
+  setTimeout(() => ws.scrollIntoView({ behavior:'smooth', block:'center' }), 200);
+}
+
+function spawnParticles() {
+  const container = document.getElementById('particles');
+  container.classList.add('active');
+  const colors = ['#00ff88','#00ffff','#ffd700','#00cc66'];
+  for (let i = 0; i < 70; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${75+Math.random()*25}%;
+      background:${colors[i%colors.length]};
+      width:${2+Math.random()*4}px;
+      height:${2+Math.random()*4}px;
+      animation-duration:${2+Math.random()*3}s;
+      animation-delay:${Math.random()*.8}s;
+    `;
+    container.appendChild(p);
+  }
+  setTimeout(() => { container.classList.remove('active'); container.innerHTML = ''; }, 5000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('inp-flag').addEventListener('keydown', e => {
+    if (e.key === 'Enter') verify();
+  });
+});
+</script>
+</body>
+</html>
