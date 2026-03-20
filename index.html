@@ -365,6 +365,7 @@ body {
 const CORRECT_HASH = "f50a3145a7a7490a2b94190eaeb400476b28625bfd499701aee51015fc249eb0";
 const FLAG_HASH    = "3437f0162e28a283f1708e4cb9f560901f5e166f3df12552da2823c3972d6ca5";
 let   playerName   = "";
+let   playerEmail  = "";
 
 (function() {
   const canvas = document.getElementById('matrix-canvas');
@@ -424,6 +425,7 @@ async function verify() {
   }
 
   playerName = name;
+  playerEmail = email;
   showMsg(msg,'success',`CLEARANCE VERIFIED — Welcome, ${name}. Deploying final stage...`);
 
   setTimeout(() => {
@@ -532,8 +534,8 @@ function launchWin(flag) {
 }
 
 function submitToSheet() {
-  const name      = document.getElementById('inp-name').value.trim();
-  const email     = document.getElementById('inp-email').value.trim();
+  const name      = playerName;
+  const email     = playerEmail;
   const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
   const SCRIPT    = "https://script.google.com/macros/s/AKfycbzeosiatpNEuAdQOy2y1P0kxmiqYxu9mo_90vQwoTBtKGQJsPQaTCqkF3JxtIWJsqVQCw/exec";
   const cbName    = "gsCallback_" + Date.now();
