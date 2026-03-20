@@ -494,6 +494,7 @@ async function checkFlag() {
   if (hash === FLAG_HASH) {
     showMsg(msg,'success','CORRECT — Transmission fully decoded. Mission complete.');
     document.getElementById('ans-input').disabled = true;
+    submitToSheet();
     launchWin(ans);
   } else {
     showMsg(msg,'error','WRONG — Decode both layers carefully and try again.');
@@ -528,6 +529,21 @@ function launchWin(flag) {
   `;
   ws.className = 'show';
   setTimeout(() => ws.scrollIntoView({ behavior:'smooth', block:'center' }), 200);
+}
+
+function submitToSheet() {
+  const name      = document.getElementById('inp-name').value.trim();
+  const email     = document.getElementById('inp-email').value.trim();
+  const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const FORM_ID   = "1FAIpQLScUR3GHSfFjt-eAH9OaQsN6VIP4kB0O6iubuzi6LVSDZSyH0g";
+  const NAME_ID   = "856231442";
+  const EMAIL_ID  = "712136071";
+  const base      = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
+  const params    = new URLSearchParams({
+    [`entry.${NAME_ID}`]:  name,
+    [`entry.${EMAIL_ID}`]: email + " | " + timestamp,
+  });
+  fetch(`${base}?${params.toString()}`, { method:'POST', mode:'no-cors' }).catch(()=>{});
 }
 
 function spawnParticles() {
