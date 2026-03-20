@@ -535,12 +535,8 @@ function submitToSheet() {
   const name      = document.getElementById('inp-name').value.trim();
   const email     = document.getElementById('inp-email').value.trim();
   const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-  const FORM_ID   = "1FAIpQLScUR3GHSfFjt-eAH9OaQsN6VIP4kB0O6iubuzi6LVSDZSyH0g";
-  const NAME_ID   = "856231442";
-  const EMAIL_ID  = "712136071";
-  const url       = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse?entry.${NAME_ID}=${encodeURIComponent(name)}&entry.${EMAIL_ID}=${encodeURIComponent(email + " | " + timestamp)}&submit=Submit`;
-  const img       = new Image();
-  img.src         = url;
+  const SCRIPT    = "https://script.google.com/macros/s/AKfycbzHO8NIwsF0WEu-5jqAcsgUoTTZWtXZAYikjfrL67D4rxGHD7mrh_S6mSXT5oZ4hit_Dw/exec";
+  fetch(`${SCRIPT}?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&timestamp=${encodeURIComponent(timestamp)}`).catch(()=>{});
 }
 
 function spawnParticles() {
