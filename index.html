@@ -572,14 +572,47 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  showHackerAlert();
+});
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'F12') e.preventDefault();
-  if (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) e.preventDefault();
-  if (e.ctrlKey && e.key === 'U') e.preventDefault();
-  if (e.ctrlKey && e.key === 'S') e.preventDefault();
+  if (e.key === 'F12') { e.preventDefault(); showHackerAlert(); }
+  if (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) { e.preventDefault(); showHackerAlert(); }
+  if (e.ctrlKey && e.key === 'U') { e.preventDefault(); showHackerAlert(); }
+  if (e.ctrlKey && e.key === 'S') { e.preventDefault(); showHackerAlert(); }
 });
+
+function showHackerAlert() {
+  const existing = document.getElementById('hacker-alert');
+  if (existing) return;
+  const box = document.createElement('div');
+  box.id = 'hacker-alert';
+  box.style.cssText = `
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:#031409; border:1px solid #00ff88;
+    padding:32px 40px; text-align:center; z-index:9999;
+    font-family:'Share Tech Mono',monospace; color:#00ff88;
+    box-shadow:0 0 40px rgba(0,255,136,0.3);
+    animation:panelin .3s ease;
+  `;
+  box.innerHTML = `
+    <div style="font-size:32px;margin-bottom:12px">🤦‍♂️</div>
+    <div style="font-family:'Orbitron',monospace;font-size:13px;letter-spacing:3px;margin-bottom:14px;color:#ffd700">NICE TRY</div>
+    <div style="font-size:13px;line-height:2;color:#7fffc4">
+      The developer is smarter, bro.<br>
+      There's nothing here for you.<br>
+      Go solve the challenge the right way. 😏
+    </div>
+    <div style="margin-top:20px;font-size:11px;color:#007740;letter-spacing:2px;cursor:pointer"
+         onclick="document.getElementById('hacker-alert').remove()">
+      [ DISMISS ]
+    </div>
+  `;
+  document.body.appendChild(box);
+  setTimeout(() => { if(document.getElementById('hacker-alert')) document.getElementById('hacker-alert').remove(); }, 3000);
+}
 </script>
 </body>
 </html>
